@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import pingouin as pg
-from src.utils import extract_grid_distribution, extract_path_efficiency, extract_sweetspot_angle
+from src.utils import *
 
 # Save to output folder
 plots_folder = f'./output/1_navigation_behaviour/'
