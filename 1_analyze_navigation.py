@@ -55,7 +55,7 @@ for scene_index in range(12):
                 pose_file = f'{pose_directory}{file}'
 
         # Extract sweet spots and angles for each participant
-        sweetspot, sweetangle = extract_sweetspot_angle(pose_file)
+        sweetspot, sweetangle = extract_sweetspot(pose_file)
 
         # Extract grid distribution
         grid_distribution = extract_grid_distribution(pose_file, x_distances=0.01, y_distances=0.01)
@@ -84,7 +84,7 @@ for scene_index in range(12):
     # Plot the participant trajectories
     plt.imshow(mean_grid_distribution.T, origin='lower', extent=(-3.5, 3.5, -3.5, 3.5), cmap='gray_r')
     plt.colorbar(label='Time Spent (Log Probability)')
-    plt.title(f'S{(scene_index%6)+1}-{cue_modality}: {environment.upper()} ENVIRONMENT')
+    plt.title(f'S{(scene_index%6)+1}-{cue_modality} Participant trajectories')
     plt.xlim([-3.0, 3.0])
     plt.ylim([-3.0, 3.2])
     plt.xlabel('X Position (m)')

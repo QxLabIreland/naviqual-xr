@@ -54,8 +54,8 @@ for scene_index in range(6):
                 audiovisual_pose_file = f'{pose_directory}{file}'
 
         # Extract sweet spot and sweet angle
-        auditory_sweetspot, auditory_sweetangle = extract_sweetspot_angle(auditory_pose_file)
-        audiovisual_sweetspot, audiovisual_sweetangle = extract_sweetspot_angle(audiovisual_pose_file)
+        auditory_sweetspot, auditory_sweetangle = extract_sweetspot(auditory_pose_file)
+        audiovisual_sweetspot, audiovisual_sweetangle = extract_sweetspot(audiovisual_pose_file)
 
         # Store data for each participant
         auditory_sweetspots.append(auditory_sweetspot)

@@ -52,7 +52,7 @@ for scene_index in range(12):
                 pose_file = f'{pose_directory}{file}'
 
         # Extract sweet spot and sweet angle
-        sweetspot, sweetangle = extract_sweetspot_angle(pose_file)
+        sweetspot, sweetangle = extract_sweetspot(pose_file)
 
         # Store data for each participant
         sweetspots.append(sweetspot)
