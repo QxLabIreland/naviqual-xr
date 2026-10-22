@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.patches as patches
+import ot
 from scipy.stats import circmean, circstd, t
 from matplotlib.patches import FancyArrowPatch, Ellipse, Wedge
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.transforms import Affine2D
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from skimage.metrics import structural_similarity as ssim
 
 def extract_grid_distribution(pose_file, x_distances=0.01, y_distances=0.01):
     df_pose_raw = pd.read_csv(pose_file)
@@ -223,6 +225,81 @@ def extract_average_ci_sweetangles(sweetangles):
                                scale=std_sweetangle / np.sqrt(N_participants))
     
     return average_sweetangle, ci_sweetangle
+
+def compute_ssim(ref, test, win_size=5):
+    # Min-max normalization
+    ref_norm = (ref - ref.min()) / (ref.max() - ref.min())
+    test_norm = (test - test.min()) / (test.max() - test.min())
+
+    # Calculate padding margin based on window size
+    margin = win_size // 2
+
+    # Apply circular padding on 3rd dimension
+    pad_width = [(0, 0), (0, 0), (margin, margin)]
+
+    ref_padded = np.pad(ref_norm, pad_width, mode='wrap')
+    test_padded = np.pad(test_norm, pad_width, mode='wrap')
+
+    # Run SSIM on padded tensors
+    _, full_ssim_map = ssim(
+        ref_padded,
+        test_padded, 
+        win_size=win_size, 
+        data_range=1.0, 
+        full=True
+    )
+
+    # Crop out the padding
+    valid_ssim_map = full_ssim_map[:, :, margin:-margin]
+
+    # Recalculate the true global score from the corrected valid region
+    global_score = np.mean(valid_ssim_map)
+
+    return global_score
+
+def compute_emd(ref, test):
+    # Define matrix dimensions
+    NX, NY, NPHI = 11, 11, 72
+
+    # Generate 3d coordinate dimensions
+    x_indices = np.arange(NX)
+    y_indices = np.arange(NY)
+    phi_indices = np.arange(NPHI)
+
+    X_grid, Y_grid, Phi_grid = np.meshgrid(x_indices, y_indices, phi_indices, indexing='ij')
+
+    # Flatten into an (8712, 3) list
+    coords = np.vstack([X_grid.ravel(), Y_grid.ravel(), Phi_grid.ravel()]).T
+
+    # Build the cost matrix
+    x_coords = coords[:, 0][:, None]
+    y_coords = coords[:, 1][:, None]
+    phi_coords = coords[:, 2][:, None]
+
+    # Compute pairwise differences
+    dx = x_coords - x_coords.T
+    dy = y_coords - y_coords.T
+    dphi_raw = np.abs(phi_coords - phi_coords.T)
+
+    # Apply circular wrap-around to the angular distance matrix
+    dphi_circular = np.minimum(dphi_raw, NPHI - dphi_raw)
+
+    # Angular weight: moving 6 bins (30 degrees) equals the cost of 1 spatial unit
+    angular_weight = 1.0 / 6.0
+
+    # Compute Cost Matrix
+    Cost_Matrix = np.sqrt(dx**2 + dy**2 + (angular_weight * dphi_circular)**2)
+
+    # Normalize Cost Matrix
+    Cost_Matrix = Cost_Matrix / np.max(Cost_Matrix)
+
+    # Flatten and normalize ref and test maps
+    a = ref.ravel() / np.sum(ref)
+    b = test.ravel() / np.sum(test)
+
+    # Compute EMD
+    emd_score = ot.sinkhorn2(a, b, Cost_Matrix, reg=0.1, method='sinkhorn_log')
+    return emd_score
 
 def annotate_environment(ax, sweetspots, sweetangles, speech_xys_scene, speech_loudness_level, modality_color, label='Subjective sweet spots'):
     """
