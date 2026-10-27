@@ -124,7 +124,7 @@ for scene_index in range(12):
 
     plt.legend(loc='lower center', ncol=2, fontsize=8)
     # plt.show()
-    plt.savefig(f'{plots_folder}S{(scene_index%6)+1}-{cue_modality}_grid_distribution.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{plots_folder}S{(scene_index%6)+1}-{cue_modality}_grid_distribution.jpg', dpi=300, bbox_inches='tight')
     plt.close()
 
     # Store data for each scene
@@ -162,7 +162,7 @@ sns.boxplot(data=df, x='Scene', y='Path Efficiency', hue='Modality',
             gap=.1, ax=ax)
 plt.ylim([0, 1])
 plt.title('Participant path efficiencies across scenes and modalities')
-plt.savefig(f'{plots_folder}path_efficiency.pdf', dpi=300, bbox_inches='tight')
+plt.savefig(f'{plots_folder}path_efficiency.jpg', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Run two-way repeated measures anova
