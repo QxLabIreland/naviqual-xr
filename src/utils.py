@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import ot
 from scipy.stats import circmean, circstd, t
 from matplotlib.patches import FancyArrowPatch, Ellipse, Wedge
@@ -301,6 +302,34 @@ def compute_emd(ref, test):
     emd_score = ot.sinkhorn2(a, b, Cost_Matrix, reg=0.1, method='sinkhorn_log')
     return emd_score
 
+def fixed_location_polar(x_loc, y_loc, Phi, Z):
+    """
+    Extract the subset of phi and z values given a fixed location (x, y)
+
+    Args:
+        x_loc: X position (in meters)
+        y_loc: Y position (in meters)
+        Phi: The mesh grid of the phi coordinates
+        Z: The mesh grid of the output values
+
+    Returns:
+        Phi_subset: The subset of phi values given fixed location
+        Z_subset: The subset of output values given fixed location
+    """
+    # Find index given x, y location
+    x_idx = np.where(np.arange(-2.5, 3.0, 0.5) == x_loc)[0][0]
+    y_idx = np.where(np.arange(-2.5, 3.0, 0.5) == y_loc)[0][0]
+
+    # Find subset
+    Phi_subset = Phi[x_idx, y_idx, :]
+    Z_subset = Z[x_idx, y_idx, :]
+
+    # Close the loop
+    Phi_subset = np.append(Phi_subset, Phi_subset[0])
+    Z_subset = np.append(Z_subset, Z_subset[0])
+
+    return Phi_subset, Z_subset
+
 def annotate_environment(ax, sweetspots, sweetangles, speech_xys_scene, speech_loudness_level, modality_color, label='Subjective sweet spots'):
     """
     Annotate the elements in the virtual environment
@@ -407,6 +436,81 @@ def annotate_compass(ax, angle):
     pivot = patches.Circle((0, 0), 0.06, facecolor='white', edgecolor='#2c3e50', linewidth=1.5, zorder=4)
     ax_compass.add_patch(pivot)
 
+    return ax
+
+def environment_on_polar(ax, listener_location, speech_locations):
+    """
+    Annotate the virtual environment on the lower right of a polar plot.
+
+    Args:
+        ax: The polar plot axis.
+        listener_location: (x, y) fixed location of the listener marked as 'o'
+        speech_locations: (x, y) locations of the distractors marked as 'x'
+
+    Returns:
+        ax: The resulting polar plot with the annotations
+    """
+
+    # Create an inset axes in the lower right corner
+    ax_inset = inset_axes(
+        ax, 
+        width="25%", 
+        height="25%",
+        loc='lower right',
+        bbox_to_anchor=(0.3, -0.05, 0.9, 0.9),
+        bbox_transform=ax.transAxes
+    )
+
+    # 3. Configure the 5x5 grid in the inset
+    # A 5x5 grid means 5 cells, so we want ticks from 0 to 5
+    ticks = np.arange(0, 6, 1)
+    ax_inset.set_xticks(ticks)
+    ax_inset.set_yticks(ticks)
+
+    # Set limits to perfectly frame the 5x5 grid
+    ax_inset.set_xlim(0, 5)
+    ax_inset.set_ylim(0, 5)
+
+    # Turn on the grid lines
+    ax_inset.grid(True, color='gray', linestyle='-', linewidth=0.5)
+
+    # Hide the tick labels so it looks like a clean indicator icon
+    ax_inset.set_xticklabels([])
+    ax_inset.set_yticklabels([])
+    ax_inset.tick_params(axis='both', which='both', length=0) # Removes the tiny tick marks
+
+    # Hide the outer spine/border lines so ONLY the inner grid shows
+    for spine in ax_inset.spines.values():
+        spine.set_visible(True)
+        spine.set_color('gray')
+        spine.set_linewidth(0.5)
+
+    # Optional: Highlight a specific "current position" cell (e.g., center cell at index 2, 2)
+    # Rectangle arguments: (xmin, ymin), width, height
+    # Head
+    circle_location = (listener_location[0] + 2.5, listener_location[1] + 2.5)
+    listener = plt.Circle(circle_location, radius=0.25, color='black', fill=False, linewidth=1)
+    ax_inset.add_patch(listener)
+
+    for speech_xy in speech_locations:
+        # Convert speech coordinates to grid indices
+        grid_x = (speech_xy[0] + 2.5) / 1.0  # Assuming each cell is 1 unit wide
+        grid_y = (speech_xy[1] + 2.5) / 1.0  # Assuming each cell is 1 unit tall
+        ax_inset.scatter(grid_x, grid_y, color='black', s=50, marker='x', linewidth=1)
+
+    # 1. ADD MUSIC SOURCES ON THE TOP OF THE GRID
+    top_labels = {1: "B", 2: "D", 3: "V", 4: "O"}  # Map x-coordinate to your text
+
+    for x_pos, label_text in top_labels.items():
+        ax_inset.text(
+            x_pos, 5,          # x and y coordinates
+            label_text, 
+            ha='center', 
+            va='bottom',         # Ensures the text sits nicely above y=5.5
+            fontsize=9, 
+            color='black',
+        )
+    
     return ax
 
 class CustomArrowHandler(HandlerPatch):

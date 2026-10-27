@@ -164,5 +164,5 @@ for scene_index in range(6):
     # Save figures
     ax.legend(loc='lower center', ncol=2,fontsize=8)
 
-    plt.savefig(f'{plots_folder}S{scene_index+1}_modalities.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{plots_folder}S{scene_index+1}_modalities.jpg', dpi=300, bbox_inches='tight')
     plt.close()

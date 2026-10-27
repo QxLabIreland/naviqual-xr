@@ -142,7 +142,7 @@ for scene_index in range(12):
                             type(ellipse): CustomEllipseHandler(), 
                             type(cone): CustomWedgeHandler()}, 
                loc='lower center', ncol=2, fontsize=8)
-    plt.savefig(f'{plots_folder}S{(scene_index%6)+1}-{cue_modality}_sweetspots.pdf', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{plots_folder}S{(scene_index%6)+1}-{cue_modality}_sweetspots.jpg', dpi=300, bbox_inches='tight')
     plt.close()
 
     # Store data for each scene
